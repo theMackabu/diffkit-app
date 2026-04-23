@@ -1,0 +1,5 @@
+#pragma once
+
+static constexpr const char *titlebar_script = R"js(
+@INJECT_JS@
+)js";
