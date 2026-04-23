@@ -35,7 +35,7 @@ set(MACOSX_BUNDLE_ICON_FILE include/icon.icns)
 set(APP_ICON "${CMAKE_SOURCE_DIR}/include/icon.icns")
 set_source_files_properties(${APP_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 
-file(GLOB_RECURSE SOURCES "src/*.cc", "src/*.c")
+file(GLOB_RECURSE SOURCES "src/*.cc" "src/*.c")
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${APP_ICON})
 
 if(APPLE)
@@ -52,6 +52,12 @@ configure_file("${CMAKE_SOURCE_DIR}/include/scripts.h.in" "${CMAKE_BINARY_DIR}/g
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_BINARY_DIR}/generated")
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+target_compile_options(${PROJECT_NAME} PRIVATE
+  $<$<PLATFORM_ID:Darwin>:-Wno-deprecated-declarations>
+  $<$<PLATFORM_ID:Darwin>:-Wno-deprecated-enum-enum-conversion>
+  $<$<PLATFORM_ID:Darwin>:-Wno-deprecated-anon-enum-enum-conversion>
+)
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
   CXX_STANDARD 23
   CXX_EXTENSIONS OFF
@@ -62,6 +68,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
   MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
   MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
   MACOSX_BUNDLE_ICON_FILE "icon.icns"
+  MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/Info.plist.in"
   OUTPUT_NAME "${APP_NAME}"
 )
 

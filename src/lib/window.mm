@@ -1,9 +1,40 @@
 #include "window.h"
+#include "deeplink.h"
 
 #import <Cocoa/Cocoa.h>
 #include <saucer/modules/stable/webkit.hpp>
 
+namespace {
+  saucer::smartview *deep_link_webview = nullptr;
+
+  void open_deep_link(NSString *raw_url) {
+    if (!raw_url) return;
+    
+    auto target_url = deeplink::url_for([raw_url UTF8String]);
+    if (!target_url) return;
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+      if (deep_link_webview) deep_link_webview->set_url(*target_url);
+    });
+  }
+}
+
+@interface DiffKitURLHandler : NSObject
+- (void)handleGetURLEvent:(NSAppleEventDescriptor *)event
+        withReplyEvent:(NSAppleEventDescriptor *)replyEvent;
+@end
+
+@implementation DiffKitURLHandler
+- (void)handleGetURLEvent:(NSAppleEventDescriptor *)event
+        withReplyEvent:(NSAppleEventDescriptor *)replyEvent {
+  (void)replyEvent;
+  open_deep_link([event paramDescriptorForKeyword:keyDirectObject].stringValue);
+}
+@end
+
 namespace window {
+  static DiffKitURLHandler *url_handler = nil;
+
   void activate(std::shared_ptr<saucer::window> window) {
     auto native = window->native();
     [NSApp activateIgnoringOtherApps:YES];
@@ -61,5 +92,17 @@ namespace window {
       usingBlock:^(NSNotification *) {
         apply_traffic_light_offset(nsWindow);
       }];
+  }
+
+  void register_deep_link_handler(saucer::smartview &webview) {
+    deep_link_webview = &webview;
+    if (!url_handler) {
+      url_handler = [DiffKitURLHandler new];
+      [[NSAppleEventManager sharedAppleEventManager]
+        setEventHandler:url_handler
+        andSelector:@selector(handleGetURLEvent:withReplyEvent:)
+        forEventClass:kInternetEventClass
+        andEventID:kAEGetURL];
+    }
   }
 }

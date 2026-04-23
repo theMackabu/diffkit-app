@@ -1,6 +1,9 @@
+[tasks.setup]
+script = "mkdir build"
+
 [tasks.build]
 path = "build"
-script = ["cmake .. -Wno-dev -G Ninja", "ninja"]
+script = ["maid -q setup", "cmake .. -Wno-dev -G Ninja", "ninja"]
 
 [tasks.start]
 script = ["mkdir build", "maid -q build", "open ./build/DiffKit.app"]
